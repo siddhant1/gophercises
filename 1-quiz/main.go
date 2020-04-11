@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 type ans struct {
@@ -19,6 +20,15 @@ func print(a []ans) {
 	for _, value := range a {
 		fmt.Println(value)
 	}
+}
+
+var correctAns []ans
+var incorrentAns []ans
+
+func takeInput(c chan string) {
+	var input string
+	fmt.Scanf("%s", &input)
+	c <- input
 }
 
 func main() {
@@ -35,24 +45,29 @@ func main() {
 		log.Fatal("Unable to parse file as CSV for ", err)
 	}
 
-	var correctAns []ans
-	var incorrentAns []ans
+	timer := time.NewTimer(2 * time.Second)
 
+problemLoop:
 	for _, value := range records {
 		fmt.Print(value[0])
-		var input string
-		fmt.Scanf("%s", &input)
-		if value[1] == input {
-			correctAns = append(correctAns, ans{userAns: input, correctAns: value[1]})
-		} else {
-			incorrentAns = append(incorrentAns, ans{userAns: input, correctAns: value[1]})
+		c := make(chan string)
+		go takeInput(c)
+		select {
+		case input := <-c:
+			if value[0] == input {
+				correctAns = append(correctAns, ans{userAns: input, correctAns: value[1]})
+			} else {
+				incorrentAns = append(incorrentAns, ans{userAns: input, correctAns: value[1]})
+			}
+		case <-timer.C:
+			fmt.Printf("\nEXITING BRO")
+			break problemLoop
 		}
-		fmt.Println("")
 	}
 
-	fmt.Println("List of correct ans")
+	fmt.Println("\nList of correct ans")
 	print(correctAns)
-	fmt.Println("List of incorrent ans")
+	fmt.Println("\nList of incorrent ans")
 	print(incorrentAns)
 
 }
